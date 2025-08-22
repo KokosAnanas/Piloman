@@ -8,6 +8,6 @@ export default [
     { path: 'documentation', component: Documentation },
     { path: 'crud', component: Crud },
     { path: 'empty', component: Empty },
-    { path: 'notices', component: Notice },
+    { path: 'notice', component: Notice },
     { path: '**', redirectTo: '/notfound' }
 ] as Routes;
