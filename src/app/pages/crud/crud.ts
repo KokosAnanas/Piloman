@@ -31,6 +31,7 @@ interface ExportColumn {
     dataKey: string;
 }
 
+// @ts-ignore
 @Component({
     selector: 'app-crud',
     standalone: true,
@@ -71,16 +72,20 @@ interface ExportColumn {
             [value]="products()"
             [rows]="10"
             [columns]="cols"
-            [paginator]="true"
+
             [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
             [tableStyle]="{ 'min-width': '75rem' }"
             [(selection)]="selectedProducts"
-            [rowHover]="true"
+
             dataKey="id"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
-            [showCurrentPageReport]="true"
+
             [rowsPerPageOptions]="[10, 20, 30]"
         >
+<!--            [paginator]="true"-->
+<!--            [rowHover]="true"-->
+<!--            [showCurrentPageReport]="true"-->
+
             <ng-template #caption>
                 <div class="flex items-center justify-between">
                     <h5 class="m-0">Manage Products</h5>

@@ -89,6 +89,11 @@ export class AppMenu {
                         label: 'Empty',
                         icon: 'pi pi-fw pi-circle-off',
                         routerLink: ['/pages/empty']
+                    },
+                    {
+                        label: 'Уведомления',
+                        icon: 'pi pi-fw pi-clipboard',
+                        routerLink: ['/pages/notices']
                     }
                 ]
             },
