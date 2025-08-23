@@ -41,37 +41,35 @@ import { createSignatureBlockTable } from '@/pages/notices/docx/createSignatureB
 import { createSignatureBlockTable2 } from '@/pages/notices/docx/createSignatureBlockTable2';
 import { SelectModule } from 'primeng/select';
 import { AutoCompleteModule } from 'primeng/autocomplete';
+import { Fluid } from 'primeng/fluid';
 interface ActionOpt { label: string; value: string; }
 
 /* ------------- Компонент --------------- */
 @Component({
     selector: 'app-notice',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule,
-        HttpClientModule, DatePicker, InputText, FileUploadModule,
-        TextareaModule, FloatLabel, ButtonModule, ButtonGroupModule,
-        Toast, SelectModule, FormsModule, AutoCompleteModule],
+    imports: [CommonModule, ReactiveFormsModule, HttpClientModule, DatePicker, InputText, FileUploadModule, TextareaModule, FloatLabel, ButtonModule, ButtonGroupModule, Toast, SelectModule, FormsModule, AutoCompleteModule, Fluid],
     providers: [MessageService],
     templateUrl: './notice.html',
-    styleUrls: ['./notice.scss'],
+    styleUrls: ['./notice.scss']
 })
 export class Notice implements OnInit {
     /* --- DI --- */
     private fb: NonNullableFormBuilder = inject(FormBuilder).nonNullable;
     private noticeService = inject(NoticeService);
-    private http = inject(HttpClient)
+    private http = inject(HttpClient);
 
     private selectedFiles: File[] = [];
     existingPhotos: string[] = [];
     private editNoticeNum: string | null = null;
-    private messageService = inject(MessageService)
+    private messageService = inject(MessageService);
 
     private toDate(val: string | Date): Date {
         return val instanceof Date ? val : new Date(val);
     }
 
     private deadlineNotBeforeNotice: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
-        const deadline   = group.get('deadline')?.value;
+        const deadline = group.get('deadline')?.value;
         const noticeDate = this.form?.controls.noticeDate.value;
 
         if (deadline && noticeDate && new Date(deadline) < new Date(noticeDate)) {
@@ -85,20 +83,19 @@ export class Notice implements OnInit {
 
     /* ============== ОСНОВНАЯ ФОРМА =================== */
     form = this.fb.group<INoticeFormGroup>({
-        orgName:    this.fb.control(''),
-        noticeNum:   this.fb.control('', { validators: Validators.required }),
-        noticeDate:  this.fb.control(''),
-        toWhom:     this.fb.control(''),
-        copyTo:     this.fb.control(''),
+        orgName: this.fb.control(''),
+        noticeNum: this.fb.control('', { validators: Validators.required }),
+        noticeDate: this.fb.control(''),
+        toWhom: this.fb.control(''),
+        copyTo: this.fb.control(''),
         specialist: this.fb.control(''),
-        present:    this.fb.control(''),
+        present: this.fb.control(''),
         objectName: this.fb.control(''),
-        workType:   this.fb.control(''),
+        workType: this.fb.control(''),
         violations: this.fb.array<FormGroup<INoticeViolationForm>>([]),
-        actions:    this.fb.control<string>(''),
-        contacts:   this.fb.control(''),
-        photos:     this.fb.control<string[]>([]),
-
+        actions: this.fb.control<string>(''),
+        contacts: this.fb.control(''),
+        photos: this.fb.control<string[]>([])
     });
 
     /* ---------- загрузка файлов ---------- */
@@ -111,31 +108,29 @@ export class Notice implements OnInit {
         /* ------------ 1. Новые фотографии из <input type="file"> ---------- */
         for (const f of this.selectedFiles) {
             const buf = await f.arrayBuffer();
-            const ext = (f.type.split('/')[1] || 'png').replace('jpeg', 'jpg') as
-                | 'jpg' | 'png' | 'gif' | 'bmp';
+            const ext = (f.type.split('/')[1] || 'png').replace('jpeg', 'jpg') as 'jpg' | 'png' | 'gif' | 'bmp';
 
             runs.push(
                 new ImageRun({
                     type: ext,
                     data: new Uint8Array(buf),
-                    transformation: { width: 500, height: 300 },
-                }),
+                    transformation: { width: 500, height: 300 }
+                })
             );
         }
 
         /* ------------ 2. Фото, которые уже были в уведомлении ------------ */
         for (const name of this.existingPhotos) {
             const resp = await fetch(this.photoSrc(name));
-            const buf  = await resp.arrayBuffer();
-            const ext  = (name.split('.').pop() || 'png')
-                .replace('jpeg', 'jpg') as 'jpg' | 'png' | 'gif' | 'bmp';
+            const buf = await resp.arrayBuffer();
+            const ext = (name.split('.').pop() || 'png').replace('jpeg', 'jpg') as 'jpg' | 'png' | 'gif' | 'bmp';
 
             runs.push(
                 new ImageRun({
                     type: ext,
                     data: new Uint8Array(buf),
-                    transformation: { width: 500, height: 300 },
-                }),
+                    transformation: { width: 500, height: 300 }
+                })
             );
         }
 
@@ -145,16 +140,14 @@ export class Notice implements OnInit {
     /** Добавление файлов */
     onSelect(ev: FileSelectEvent) {
         /* spread-оператор вместо push, чтобы не получить вложенный массив */
-        this.selectedFiles = [...this.selectedFiles, ...ev.files as File[]];
+        this.selectedFiles = [...this.selectedFiles, ...(ev.files as File[])];
         this.refreshPhotosField();
     }
 
     /** Удаление одного файла ("красный х") */
     onRemove(ev: FileRemoveEvent) {
         const f = ev.file;
-        this.selectedFiles = this.selectedFiles.filter(
-            x => !(x.name === f.name && x.size === f.size && x.lastModified === f.lastModified)
-        );
+        this.selectedFiles = this.selectedFiles.filter((x) => !(x.name === f.name && x.size === f.size && x.lastModified === f.lastModified));
         this.refreshPhotosField();
     }
 
@@ -166,20 +159,17 @@ export class Notice implements OnInit {
 
     /** Обновление поля `photos` формы, чтобы оно показывало только актуальные имена */
     private refreshPhotosField() {
-        const names = [
-            ...this.existingPhotos,
-            ...this.selectedFiles.map(f => f.name),
-        ];
+        const names = [...this.existingPhotos, ...this.selectedFiles.map((f) => f.name)];
         this.form.controls.photos.setValue(names);
     }
 
     /* ----------Подготовка FormData для POST ---------- */
     private buildFormData(): FormData {
-        const dto  = this.buildDto();           // сформировать JSON-объект DTO
+        const dto = this.buildDto(); // сформировать JSON-объект DTO
         const data = new FormData();
 
-        data.append('notice', JSON.stringify(dto));     // вложить JSON с данными
-        this.selectedFiles.forEach(file => data.append('photos', file));
+        data.append('notice', JSON.stringify(dto)); // вложить JSON с данными
+        this.selectedFiles.forEach((file) => data.append('photos', file));
 
         return data;
     }
@@ -188,7 +178,7 @@ export class Notice implements OnInit {
         { label: 'устранить выявленные нарушения в указанный срок', value: 'fix1' },
         { label: 'предоставить требуемые документы в установленный срок.', value: 'fix2' },
         { label: 'приостановить работы до устранения', value: 'stop' },
-        { label: 'Другое...', value: 'other' },
+        { label: 'Другое...', value: 'other' }
     ];
 
     ngOnInit(): void {
@@ -207,22 +197,25 @@ export class Notice implements OnInit {
 
     /* --------- создание группы‑нарушения ----------- */
     private createViolationGroup(): FormGroup<INoticeViolationForm> {
-        const group = this.fb.group<INoticeViolationForm>({
-            place:    this.fb.control(''),
-            element:  this.fb.control(''),
-            subject:  this.fb.control(''),
-            norm:     this.fb.control(''),
-            deadline: this.fb.control<string | Date>(''),
-            note:     this.fb.control(''),
-        }, { validators: this.deadlineNotBeforeNotice });
+        const group = this.fb.group<INoticeViolationForm>(
+            {
+                place: this.fb.control(''),
+                element: this.fb.control(''),
+                subject: this.fb.control(''),
+                norm: this.fb.control(''),
+                deadline: this.fb.control<string | Date>(''),
+                note: this.fb.control('')
+            },
+            { validators: this.deadlineNotBeforeNotice }
+        );
 
         /* всплывающее сообщение */
-        group.statusChanges.subscribe(status => {
+        group.statusChanges.subscribe((status) => {
             if (status === 'INVALID' && group.errors?.['earlyDeadline']) {
                 this.messageService.add({
                     severity: 'warn',
-                    summary : 'Некорректная дата',
-                    detail  : 'Дата уведомления позже, чем предлагаемый срок устранения'
+                    summary: 'Некорректная дата',
+                    detail: 'Дата уведомления позже, чем предлагаемый срок устранения'
                 });
             }
         });
@@ -254,22 +247,24 @@ export class Notice implements OnInit {
             workType: notice.workType,
             actions: notice.actions,
             contacts: notice.contacts ?? '',
-            photos: notice.photos,
+            photos: notice.photos
         });
 
         this.existingPhotos = [...notice.photos];
         this.refreshPhotosField();
 
         this.violations.clear();
-        notice.violations.forEach(v => {
-            this.violations.push(this.fb.group<INoticeViolationForm>({
-                place: this.fb.control(v.place),
-                element: this.fb.control(v.element),
-                subject: this.fb.control(v.subject),
-                norm: this.fb.control(v.norm),
-                deadline: this.fb.control(this.toDate(v.deadline)),
-                note: this.fb.control(v.note ?? ''),
-            }));
+        notice.violations.forEach((v) => {
+            this.violations.push(
+                this.fb.group<INoticeViolationForm>({
+                    place: this.fb.control(v.place),
+                    element: this.fb.control(v.element),
+                    subject: this.fb.control(v.subject),
+                    norm: this.fb.control(v.norm),
+                    deadline: this.fb.control(this.toDate(v.deadline)),
+                    note: this.fb.control(v.note ?? '')
+                })
+            );
         });
     }
 
@@ -278,35 +273,32 @@ export class Notice implements OnInit {
     }
 
     removeExistingPhoto(name: string) {
-        this.existingPhotos = this.existingPhotos.filter(p => p !== name);
+        this.existingPhotos = this.existingPhotos.filter((p) => p !== name);
         this.refreshPhotosField();
     }
 
-
     /* ---------- подготовка DTO ---------- */
     private buildDto(): CreateNoticeDto {
-        const f = this.form.getRawValue();               // строго типизированное значение
+        const f = this.form.getRawValue(); // строго типизированное значение
         console.log(this);
         return {
-            orgName:    f.orgName,
-            noticeNum:  f.noticeNum,
+            orgName: f.orgName,
+            noticeNum: f.noticeNum,
             noticeDate: new Date(f.noticeDate).toISOString(),
-            toWhom:     f.toWhom,
-            copyTo:     f.copyTo,
+            toWhom: f.toWhom,
+            copyTo: f.copyTo,
             specialist: f.specialist,
-            present:    f.present,
+            present: f.present,
             objectName: f.objectName,
-            workType:   f.workType,
-            violations: f.violations.map(
-                v => ({
-                    ...v,
-                    deadline: new Date(v.deadline).toISOString(),
-                })),
-            actions:    f.actions as string,
-            contacts:   f.contacts,
-            photos: [...this.existingPhotos, ...this.selectedFiles.map(f => f.name)],
+            workType: f.workType,
+            violations: f.violations.map((v) => ({
+                ...v,
+                deadline: new Date(v.deadline).toISOString()
+            })),
+            actions: f.actions as string,
+            contacts: f.contacts,
+            photos: [...this.existingPhotos, ...this.selectedFiles.map((f) => f.name)]
         };
-
     }
 
     /* ============ КНОПКИ ============== */
@@ -314,7 +306,10 @@ export class Notice implements OnInit {
     /** Кнопка "Сохранить в БД" */
     // Подготовка FormData и отправка запроса POST
     async saveToDb() {
-        if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            return;
+        }
 
         try {
             const data = this.buildFormData();
@@ -326,15 +321,15 @@ export class Notice implements OnInit {
 
             this.messageService.add({
                 severity: 'success',
-                summary : 'Готово',
-                detail  : 'Уведомление сохранено в Базе данных'
+                summary: 'Готово',
+                detail: 'Уведомление сохранено в Базе данных'
             });
         } catch (e) {
             console.error(e);
             this.messageService.add({
                 severity: 'error',
-                summary : 'Ошибка',
-                detail  : 'Не удалось сохранить'
+                summary: 'Ошибка',
+                detail: 'Не удалось сохранить'
             });
         }
     }
@@ -351,26 +346,25 @@ export class Notice implements OnInit {
     /** Очистить все поля формы */
     clearForm() {
         this.form = this.fb.group<INoticeFormGroup>({
-            orgName:    this.fb.control(''),
-            noticeNum:  this.fb.control(''),
+            orgName: this.fb.control(''),
+            noticeNum: this.fb.control(''),
             noticeDate: this.fb.control(''),
-            toWhom:     this.fb.control(''),
-            copyTo:     this.fb.control(''),
+            toWhom: this.fb.control(''),
+            copyTo: this.fb.control(''),
             specialist: this.fb.control(''),
-            present:    this.fb.control(''),
+            present: this.fb.control(''),
             objectName: this.fb.control(''),
-            workType:   this.fb.control(''),
+            workType: this.fb.control(''),
             violations: this.fb.array<FormGroup<INoticeViolationForm>>([]),
-            actions:    this.fb.control<string>(''),
-            contacts:   this.fb.control(''),
-            photos:     this.fb.control<string[]>([]),
+            actions: this.fb.control<string>(''),
+            contacts: this.fb.control(''),
+            photos: this.fb.control<string[]>([])
         });
         this.selectedFiles = [];
         this.existingPhotos = [];
         this.editNoticeNum = null;
         this.addViolation();
     }
-
 
     /* ------------- ВСПОМОГАТЕЛЬНОЕ ---------------- */
     private fileName(ext: string) {
@@ -380,20 +374,7 @@ export class Notice implements OnInit {
     private datePipe = inject(DatePipe);
 
     /* --------------------------- DOCX ------------------------------------- */
-    private readonly RU_MONTHS = [
-        'января',
-        'февраля',
-        'марта',
-        'апреля',
-        'мая',
-        'июня',
-        'июля',
-        'августа',
-        'сентября',
-        'октября',
-        'ноября',
-        'декабря',
-    ];
+    private readonly RU_MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
     private formatRuDate(date: string | Date): string {
         const d = date instanceof Date ? date : new Date(date);
@@ -406,14 +387,15 @@ export class Notice implements OnInit {
 
         /* ------------------------- Блок "Дата / Кому" на одной строке --------------------------------- */
         const dateToWhomTable = new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },   // таблица во всю ширину
-            borders: {                 // убираем все линии (делаем «невидимой»)
+            width: { size: 100, type: WidthType.PERCENTAGE }, // таблица во всю ширину
+            borders: {
+                // убираем все линии (делаем «невидимой»)
                 top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
                 bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
                 left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
                 right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
                 insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                insideVertical:   { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
             },
 
             rows: [
@@ -426,11 +408,9 @@ export class Notice implements OnInit {
                             children: [
                                 new Paragraph({
                                     alignment: AlignmentType.LEFT,
-                                    children: [
-                                        new TextRun(this.formatRuDate(f.noticeDate ?? '')),
-                                    ],
-                                }),
-                            ],
+                                    children: [new TextRun(this.formatRuDate(f.noticeDate ?? ''))]
+                                })
+                            ]
                         }),
 
                         /* -------- правая ячейка: "Кому" --------- */
@@ -443,10 +423,10 @@ export class Notice implements OnInit {
                                     children: [
                                         new TextRun({
                                             text: 'Кому: ',
-                                            bold: true,
+                                            bold: true
                                         }),
-                                        new TextRun(String(f.toWhom)),
-                                    ],
+                                        new TextRun(String(f.toWhom))
+                                    ]
                                 }),
                                 new Paragraph({ text: ' ' }),
 
@@ -455,17 +435,16 @@ export class Notice implements OnInit {
                                     children: [
                                         new TextRun({
                                             text: 'Копия: ',
-                                            bold: true,
+                                            bold: true
                                         }),
-                                        new TextRun(String(f.copyTo)),
-                                    ],
-                                }),
-
-                            ],
-                        }),
-                    ],
-                }),
-            ],
+                                        new TextRun(String(f.copyTo))
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
         });
 
         /* --- Таблица нарушений --- */
@@ -477,7 +456,7 @@ export class Notice implements OnInit {
                 left: { style: BorderStyle.SINGLE, size: 1 },
                 right: { style: BorderStyle.SINGLE, size: 1 },
                 insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
-                insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+                insideVertical: { style: BorderStyle.SINGLE, size: 1 }
             },
             rows: [
                 /* --- заголовок --- */
@@ -485,104 +464,96 @@ export class Notice implements OnInit {
                     children: [
                         this.headerCell('№\nп/п', 5),
                         this.headerCell('Перечень выявленных нарушений', 45),
-                        this.headerCell(
-                            'Наименование нормативного документа, пункт, шифр проекта, лист',
-                            25,
-                        ),
+                        this.headerCell('Наименование нормативного документа, пункт, шифр проекта, лист', 25),
                         this.headerCell('Предлагаемый срок устранения', 15),
-                        this.headerCell('Примечание', 10),
-                    ],
+                        this.headerCell('Примечание', 10)
+                    ]
                 }),
                 /* --- строки из формы --- */
-                ...(f.violations as INoticeViolation[]).map((v, i) =>
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                verticalAlign: VerticalAlign.CENTER,
-                                children: [
-                                    new Paragraph({
-                                        alignment: AlignmentType.CENTER,
-                                        children: [new TextRun(String(i + 1))],
-                                    }),
-                                ],
-                            }),
-                            new TableCell({
-                                children: [
+                ...(f.violations as INoticeViolation[]).map(
+                    (v, i) =>
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    children: [
+                                        new Paragraph({
+                                            alignment: AlignmentType.CENTER,
+                                            children: [new TextRun(String(i + 1))]
+                                        })
+                                    ]
+                                }),
+                                new TableCell({
+                                    children: [
+                                        new Paragraph({
+                                            indent: { left: 400 },
+                                            children: [
+                                                new TextRun({
+                                                    text: 'Место нарушения:',
+                                                    italics: true,
+                                                    underline: { type: UnderlineType.SINGLE }
+                                                })
+                                            ]
+                                        }),
+                                        new Paragraph({
+                                            alignment: AlignmentType.START,
+                                            children: [new TextRun(String(v.place))]
+                                        }),
 
-                                    new Paragraph({
-                                        indent: { left: 400 },
-                                        children: [
-                                            new TextRun({
-                                                text: 'Место нарушения:',
-                                                italics: true,
-                                                underline: { type: UnderlineType.SINGLE },
-                                            }),
-                                        ],
-                                    }),
-                                    new Paragraph({
-                                        alignment: AlignmentType.START,
-                                        children: [ new TextRun(String(v.place)) ],
-                                    }),
+                                        new Paragraph({
+                                            indent: { left: 400 },
+                                            children: [
+                                                new TextRun({
+                                                    text: 'Элемент нарушения:',
+                                                    italics: true,
+                                                    underline: { type: UnderlineType.SINGLE }
+                                                })
+                                            ]
+                                        }),
+                                        new Paragraph({
+                                            alignment: AlignmentType.START,
+                                            children: [new TextRun(String(v.element))]
+                                        }),
 
-                                    new Paragraph({
-                                        indent: { left: 400 },
-                                        children: [
-                                            new TextRun({
-                                                text: 'Элемент нарушения:',
-                                                italics: true,
-                                                underline: { type: UnderlineType.SINGLE },
-                                            }),
-                                        ],
-                                    }),
-                                    new Paragraph({
-                                        alignment: AlignmentType.START,
-                                        children: [ new TextRun(String(v.element)) ],
-                                    }),
-
-                                    new Paragraph({
-                                        indent: { left: 400 },
-                                        children: [
-                                            new TextRun({
-                                                text: 'Предмет нарушения:',
-                                                italics: true,
-                                                underline: { type: UnderlineType.SINGLE },
-                                            }),
-                                        ],
-                                    }),
-                                    new Paragraph({
-                                        alignment: AlignmentType.START,
-                                        children: [ new TextRun(String(v.subject)) ],
-                                    }),
-
-                                ],
-                            }),
-                            new TableCell({
-                                verticalAlign: VerticalAlign.CENTER,
-                                children: [
-                                    new Paragraph({
-                                        alignment: AlignmentType.CENTER,
-                                        children: [ new TextRun(v.norm) ],
-                                    }),
-                                ],
-                            }),
-                            new TableCell({
-                                verticalAlign: VerticalAlign.CENTER,
-                                children: [
-                                    new Paragraph({
-                                        alignment: AlignmentType.CENTER,
-                                        children: [
-                                            new TextRun(
-                                                this.datePipe.transform(v.deadline, 'dd.MM.yyyy') ?? ''
-                                            ),
-                                        ],
-                                    }),
-                                ],
-                            }),
-                            new TableCell({ children: [new Paragraph(v.note ?? '')] }),
-                        ],
-                    }),
-                ),
-            ],
+                                        new Paragraph({
+                                            indent: { left: 400 },
+                                            children: [
+                                                new TextRun({
+                                                    text: 'Предмет нарушения:',
+                                                    italics: true,
+                                                    underline: { type: UnderlineType.SINGLE }
+                                                })
+                                            ]
+                                        }),
+                                        new Paragraph({
+                                            alignment: AlignmentType.START,
+                                            children: [new TextRun(String(v.subject))]
+                                        })
+                                    ]
+                                }),
+                                new TableCell({
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    children: [
+                                        new Paragraph({
+                                            alignment: AlignmentType.CENTER,
+                                            children: [new TextRun(v.norm)]
+                                        })
+                                    ]
+                                }),
+                                new TableCell({
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    children: [
+                                        new Paragraph({
+                                            alignment: AlignmentType.CENTER,
+                                            children: [new TextRun(this.datePipe.transform(v.deadline, 'dd.MM.yyyy') ?? '')]
+                                        })
+                                    ]
+                                }),
+                                new TableCell({ children: [new Paragraph(v.note ?? '')] })
+                            ]
+                        })
+                )
+            ]
         });
 
         /* --------------------------- Документ -------------------------------------------------------- */
@@ -594,10 +565,10 @@ export class Notice implements OnInit {
                         run: {
                             /* 12 pt = 24 half-points */
                             size: 24,
-                            font: 'Times New Roman',
-                        },
-                    },
-                },
+                            font: 'Times New Roman'
+                        }
+                    }
+                }
             },
 
             sections: [
@@ -605,8 +576,8 @@ export class Notice implements OnInit {
                     /* поля страницы: 20мм слева, 10мм справа, 10мм сверху/снизу */
                     properties: {
                         page: {
-                            margin: { left: 1134, right: 567, top: 567, bottom: 567 }, // 20 мм / 10 мм / 1 мм ≈ 56,7
-                        },
+                            margin: { left: 1134, right: 567, top: 567, bottom: 567 } // 20 мм / 10 мм / 1 мм ≈ 56,7
+                        }
                     },
                     children: [
                         /* --- шапка --- */
@@ -615,25 +586,26 @@ export class Notice implements OnInit {
 
                             /* одна сплошная линия вдоль всей строки */
                             border: {
-                                bottom: {                         // нижняя граница параграфа
-                                    style: BorderStyle.SINGLE,      // сплошная
-                                    size: 6,                        // 6 half-points = 0,75 pt
-                                    color: 'auto',                  // чёрный по умолчанию
-                                },
+                                bottom: {
+                                    // нижняя граница параграфа
+                                    style: BorderStyle.SINGLE, // сплошная
+                                    size: 6, // 6 half-points = 0,75 pt
+                                    color: 'auto' // чёрный по умолчанию
+                                }
                             },
 
-                            children: [
-                                new TextRun({ text: f.orgName }),
-                            ],
+                            children: [new TextRun({ text: f.orgName })]
                         }),
 
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
-                            children: [new TextRun({
-                                text: '(наименование организации, осуществляющей СК заказчика)',
-                                superScript: true,                   // текст надстрочный
-                                italics: true,
-                            })],
+                            children: [
+                                new TextRun({
+                                    text: '(наименование организации, осуществляющей СК заказчика)',
+                                    superScript: true, // текст надстрочный
+                                    italics: true
+                                })
+                            ]
                         }),
 
                         new Paragraph({ text: ' ' }),
@@ -642,7 +614,7 @@ export class Notice implements OnInit {
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
                             spacing: { before: 120, after: 60 },
-                            children: [new TextRun({ text: 'УВЕДОМЛЕНИЕ', bold: true })],
+                            children: [new TextRun({ text: 'УВЕДОМЛЕНИЕ', bold: true })]
                         }),
 
                         new Paragraph({
@@ -650,9 +622,9 @@ export class Notice implements OnInit {
                             children: [
                                 new TextRun({
                                     text: `О ВЫЯВЛЕННЫХ НАРУШЕНИЯХ № ${f.noticeNum}`,
-                                    bold: true,
-                                }),
-                            ],
+                                    bold: true
+                                })
+                            ]
                         }),
                         new Paragraph({ text: ' ' }),
 
@@ -664,15 +636,15 @@ export class Notice implements OnInit {
                         /* ---------------------- Присутствующие и объект ---------------------- */
 
                         new Paragraph({
-                            indent: { firstLine: 567 },     // отступ 10 мм (567 twip)
+                            indent: { firstLine: 567 }, // отступ 10 мм (567 twip)
                             alignment: AlignmentType.JUSTIFIED,
                             children: [
                                 new TextRun(
                                     `Мною, ${f.specialist}, в присутствии ${f.present}
 на объекте: ${f.objectName} в ходе выполнения ${f.workType} выявлены следующие нарушения требований действующих нормативных
 документов, отступления от проектной документации:`
-                                ),
-                            ],
+                                )
+                            ]
                         }),
                         new Paragraph({ text: ' ' }),
 
@@ -682,34 +654,27 @@ export class Notice implements OnInit {
 
                         /* --- Действия --- */
                         new Paragraph({
-                            alignment: AlignmentType.JUSTIFIED,   // выравнивание по ширине
-                            indent: { firstLine: 567 },           // 10 мм ≈ 567 twip
+                            alignment: AlignmentType.JUSTIFIED, // выравнивание по ширине
+                            indent: { firstLine: 567 }, // 10 мм ≈ 567 twip
                             children: [
-                                new TextRun(
-                                    'В связи с тем, что выявленные нарушения ведут к снижению качества работ и\n' +
-                                    'уровня безопасности объектов ПАО «Газпром», '
-                                ),
+                                new TextRun('В связи с тем, что выявленные нарушения ведут к снижению качества работ и\n' + 'уровня безопасности объектов ПАО «Газпром», '),
                                 new TextRun({
                                     text: `необходимо: ${f.actions}`,
-                                    bold: true,                        // жирный шрифт
-                                }),
-                            ],
+                                    bold: true // жирный шрифт
+                                })
+                            ]
                         }),
 
                         new Paragraph({
-                            indent: { firstLine: 567 },     // отступ 10 мм (567 twip)
+                            indent: { firstLine: 567 }, // отступ 10 мм (567 twip)
                             alignment: AlignmentType.JUSTIFIED,
-                            children: [
-                                new TextRun(
-                                    `После устранения нарушений прошу Вас представить официальный ответ ${f.contacts}`
-                                ),
-                            ],
+                            children: [new TextRun(`После устранения нарушений прошу Вас представить официальный ответ ${f.contacts}`)]
                         }),
                         new Paragraph({ text: ' ' }),
 
                         /* --- Подписи --- */
                         new Paragraph({
-                            children: [new TextRun({ text: 'Подписи:'})],
+                            children: [new TextRun({ text: 'Подписи:' })]
                         }),
 
                         createSignatureBlockTable(),
@@ -720,40 +685,43 @@ export class Notice implements OnInit {
                         new Paragraph({ text: ' ' }),
 
                         new Paragraph({
-                            text: 'Отметка о закрытии уведомления ________________________________________',
-                        }),
-                    ],
+                            text: 'Отметка о закрытии уведомления ________________________________________'
+                        })
+                    ]
                 },
 
                 /* ---------- Вторая страница с фотографиями ---------- */
                 ...(images.length
-                    ? [{
-                        /* те же поля страницы, что и в первой секции */
-                        properties: {
-                            page: { margin: { left: 1134, right: 567, top: 567, bottom: 567 } },
-                        },
-                        children: [
-                            new Paragraph({
-                                alignment: AlignmentType.RIGHT,
-                                spacing: { after: 300 },
-                                children: [
-                                    new TextRun({
-                                        text: `Приложение к уведомлению № ${f.noticeNum} от ${this.datePipe.transform(f.noticeDate, 'dd.MM.yyyy')}`,
-                                        bold: true,
-                                    }),
-                                ],
-                            }),
-                            ...images.map(img =>
-                                new Paragraph({
-                                    alignment: AlignmentType.CENTER,
-                                    spacing: { after: 300 },
-                                    children: [ img ],
-                                }),
-                            ),
-                        ],
-                    }]
-                    : []),
-            ],
+                    ? [
+                          {
+                              /* те же поля страницы, что и в первой секции */
+                              properties: {
+                                  page: { margin: { left: 1134, right: 567, top: 567, bottom: 567 } }
+                              },
+                              children: [
+                                  new Paragraph({
+                                      alignment: AlignmentType.RIGHT,
+                                      spacing: { after: 300 },
+                                      children: [
+                                          new TextRun({
+                                              text: `Приложение к уведомлению № ${f.noticeNum} от ${this.datePipe.transform(f.noticeDate, 'dd.MM.yyyy')}`,
+                                              bold: true
+                                          })
+                                      ]
+                                  }),
+                                  ...images.map(
+                                      (img) =>
+                                          new Paragraph({
+                                              alignment: AlignmentType.CENTER,
+                                              spacing: { after: 300 },
+                                              children: [img]
+                                          })
+                                  )
+                              ]
+                          }
+                      ]
+                    : [])
+            ]
         });
     }
 
@@ -765,9 +733,9 @@ export class Notice implements OnInit {
             children: [
                 new Paragraph({
                     alignment: AlignmentType.CENTER,
-                    children: [new TextRun({ text, bold: true })],
-                }),
-            ],
+                    children: [new TextRun({ text, bold: true })]
+                })
+            ]
         });
     }
 }
