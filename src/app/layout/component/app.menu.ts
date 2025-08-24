@@ -94,6 +94,11 @@ export class AppMenu {
                         label: 'Уведомления',
                         icon: 'pi pi-fw pi-clipboard',
                         routerLink: ['/pages/notice']
+                    },
+                    {
+                        label: 'Реестр уведомлений',
+                        icon: 'pi pi-fw pi-clipboard',
+                        routerLink: ['/pages/registry']
                     }
                 ]
             },
