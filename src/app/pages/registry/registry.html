@@ -103,8 +103,8 @@
                                     <p-image
                                         *ngFor="let p of row.photos"
                                         [src]="photoSrc(p)"
-                                        preview
-                                        imageClass="w-6rem h-4rem object-cover border-round shadow-2">
+                                        [preview]="true"
+                                        imageClass="w-24 h-16 object-cover rounded-md shadow-sm">
                                     </p-image>
                                 </div>
                             </ng-container>
