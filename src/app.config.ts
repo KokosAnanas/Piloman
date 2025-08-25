@@ -1,4 +1,4 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
 import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
@@ -8,13 +8,18 @@ import { appRoutes } from './app.routes';
 import { ReactiveFormsModule } from '@angular/forms';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { DatePipe } from '@angular/common';
+import { ConfigService } from '@/pages/service/config.service';
+import { AuthInterceptor } from '@/pages/service/auth-interceptor';
+
+const loadConfig = (cfg: ConfigService) => () => cfg.loadPromise();
+
 
 export const appConfig: ApplicationConfig = {
     providers: [
         provideRouter(appRoutes,
             withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }),
             withEnabledBlockingInitialNavigation()),
-        provideHttpClient(withFetch()),
+        provideHttpClient(withInterceptorsFromDi()),
         provideAnimationsAsync(),
         providePrimeNG({
             theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } },
@@ -28,11 +33,23 @@ export const appConfig: ApplicationConfig = {
                 accept: 'Да',
                 reject: 'Отмена',
             }}),
-
+        {
+            provide: APP_INITIALIZER,
+            useFactory: loadConfig,
+            deps: [ConfigService],
+            multi: true
+        },
 
         importProvidersFrom(ReactiveFormsModule),
         provideZoneChangeDetection({ eventCoalescing: true }),
         provideAnimations(),
         DatePipe,
+        {
+            provide: APP_INITIALIZER,
+            useFactory: loadConfig,
+            deps: [ConfigService],
+            multi: true
+        },
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
     ]
 };
