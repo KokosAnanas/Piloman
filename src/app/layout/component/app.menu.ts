@@ -59,9 +59,9 @@ export class AppMenu {
                         icon: 'pi pi-fw pi-user',
                         items: [
                             {
-                                label: 'Login',
+                                label: 'Authorization',
                                 icon: 'pi pi-fw pi-sign-in',
-                                routerLink: ['/auth/login']
+                                routerLink: ['/auth/authorization']
                             },
                             {
                                 label: 'Error',
