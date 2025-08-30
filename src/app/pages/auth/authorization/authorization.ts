@@ -39,7 +39,7 @@ export class Authorization implements OnInit, OnDestroy {
         this.userService.authUser(user).subscribe(
             () => {
                 this.userService.setUser(user);
-                this.router.navigate(['notice']);
+                this.router.navigate(['/']);
             },
             () => {
                 this.initToast('error', 'Не верный login или password');

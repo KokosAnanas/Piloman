@@ -4,10 +4,12 @@ import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Documentation } from './app/pages/documentation/documentation';
 import { Landing } from './app/pages/landing/landing';
 import { Notfound } from './app/pages/notfound/notfound';
+import { authGuard } from '@/shared/guards/auth-guard';
 
 export const appRoutes: Routes = [
     {
         path: '',
+        // canActivate: [authGuard],
         component: AppLayout,
         children: [
             { path: '', component: Dashboard },

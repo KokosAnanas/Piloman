@@ -10,6 +10,8 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { DatePipe } from '@angular/common';
 import { ConfigService } from '@/pages/service/config.service';
 import { AuthInterceptor } from '@/pages/service/auth-interceptor';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 const loadConfig = (cfg: ConfigService) => () => cfg.loadPromise();
 
@@ -40,9 +42,10 @@ export const appConfig: ApplicationConfig = {
             multi: true
         },
 
-        importProvidersFrom(ReactiveFormsModule),
+        importProvidersFrom(ReactiveFormsModule, ToastModule),
         provideZoneChangeDetection({ eventCoalescing: true }),
         provideAnimations(),
+        MessageService,
         DatePipe,
         {
             provide: APP_INITIALIZER,

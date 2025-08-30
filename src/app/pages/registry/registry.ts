@@ -138,7 +138,7 @@ export class Registry implements OnInit {
     }
 
     openNotice(row: RegistryRow) {
-        this.router.navigate(['/notice'], { state: { notice: row } });
+        this.router.navigate(['/pages/notice'], { state: { notice: row } });
     }
 
     deleteNotice(row: RegistryRow) {
